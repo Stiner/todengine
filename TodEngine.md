@@ -1,0 +1,25 @@
+## Introduction ##
+  * Realtime 3D game/visualization engine, framework, toolkit, library and tool for Tool-Oriented Development paradigm, written in C++, scriptable through Python, Lua. Supports D3D for rendering, runs under Windows only.
+
+## Prerequisite ##
+  * Visual Studio.NET 2005
+  * Microsoft DirectX SDK (March 2008)
+  * Python25
+  * wxPython
+  * Boost
+  * TinyXML
+
+## Compilation ##
+  * open $(Python25Dir)/include/pyconfig.h
+  * find _d.lib
+  * change_d.lib -> .lib
+  * find
+```
+#ifdef _DEBUG
+# define Py_DEBUG
+#endif 
+```
+  * change #ifdef _DEBUG -> #ifdef DEBUG_
+
+## License ##
+  * MIT License

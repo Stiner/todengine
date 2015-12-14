@@ -1,0 +1,83 @@
+# Modular Programming #
+  * TodEngine 에서 기능들은 Node 객체의 조합으로 제공된다.
+  * TodEngine 에서 Node 클래스를 제공하는 전체 집합은 Module 이다.
+  * Module 은 제공하는 Node의 종류를 제공하고 결국 기능집합을 제공한다.
+
+# NOH(Named Object of Hierarchy) #
+  * TodEngine 에서 객체는 NOH라고 불리우는 트리형식의 데이터 구조로 관리된다. 이는 OS의 파일 시스템의 디렉토리구조와 흡사하다.
+  * TodEngine 의 최상위 클래스 이름은 **Object** 이다.
+  * TodEngine 에서 이름을 가진 관리되는 클래스 이름은 **Node** 이다. 이 클래스를 상속받으면 NOH에 생성될 수 있다.
+  * Kernel 은 TodEngine에서 NOH 상의 객체를 생성하고 조회해 볼 수 있는 기능을 갖는다.
+  * TodEngine 에서 NOH 는 여러가지 의미를 같는다.
+    * Singleton : NOH 상에 생성된 객체는 그 객체의 유일한 이름인 path 를 갖는다. 이러한 객체 이름은 C++의 pointer 와 string의 관계지을 수 있게한다. 이렇게 string(path)를 갖는 객체는 script를 통한 명령전달이 가능하도록 한다.
+    * State : Application 의 현재 상태를 반영(Reflection)한다. NOH상의 여러 객체들이 모여 현재의 Application 상태나 기능을 구성하고 나타낸다.
+
+# Kernel #
+  * 객체 생성
+```
+// Node 라는 이름의 타입으로 NOH상의 path:/usr/scene/test 에 생성한다.
+Node* new_node = Kernel::instance()->create("Node", "/usr/scene/test");
+
+// 새롭게 생성된 객체의 이름은 path 의 맨 마지막 이름인 test 이다.
+new_node->getName() == "test";
+
+// 새롭게 생성된 객체의 absolute path 는 다음과 같이 구한다.
+new_node->getAbsolutePath() == "/usr/scene/test";
+
+// NOH상의 객체를 검색할때는 다음과같이 한다.
+Node* exist_node = Kernel::instance()->lookup("/usr/scene/test");
+
+// 이렇게 조회한 객체는 위에 새롭게 생성된 객체와 동일한 객체이다.
+new_node == exist_node;
+```
+
+# Object Persistency #
+  * NOH 상의 객체는 디스크상의 파일로 저장될 수 있다.
+  * 이러한 동작은 TodEngine에서 제공되는 Reflection기능을 통해 제공된다.
+  * Node를 상속받는 모든 객체들은 고유의 property를 선언할 수 있는데, 이렇게 노출된 property를 Serializer 를 통해서 자동으로 파일로 저장된다.
+```
+Node* usr_node = Kernel::instance()->lookup("/usr");
+XmlSerializer xs;
+// usr.xml 이라는 이름의 파일로 usr_node를 serialization 한다.
+xs.serialize("managed://script#usr.xml", usr_node);
+
+// usr.xml 로부터 객체를 deserialzation 한다.
+Node* root_node = Kernel::instance()->lookup("/");
+xs.deserialize(root_node, "managed://script#usr.xml", 0);
+```
+
+# Scripting #
+  * TodEngine 에서는 고유의 Scripting Abstraction Layer 가 존재한다.
+  * 이러한 Layer 는 다양한 Script 언어에 대한 interface 를 제공한다.
+  * 이러한 특징 때문에 Node 에 method binding 과정을 거치게 되면 Python, Lua, Ruby를 이용하여 객체에 command 를 invokation 할 수 있게 된다.
+```
+# in Python
+from todpython import *
+node = get('/usr/scene/test')
+node.getName() == 'test'
+node.getAbsolutePath() == '/usr/scene/test'
+```
+```
+# in Lua
+node = get('/usr/scene/test')
+node:getName() == 'test'
+node:getAbsolutePath() == '/usr/scene/test'
+```
+
+# Resource Management #
+  * TodEngine 에서 File은 Virtual Storage 의 개념으로 관리된다.
+  * TodEngine::ResourceManager 는 Application이 시작될때 지정된 하나의 Resource 디렉토리를 지정하게 된다. 이렇게 지정된 디렉토리 하위의 디렉토리들은 각 Virtual Storage 가 된다.
+```
+/data(Root Resource)
+    /mesh(Virtual Storage)
+    /script(Virtual Storage)
+    /...
+```
+  * TodEngine 에서는 Application 이 Shipping 될때 하나의 Virtual Storage 는 Packed Virtual File System(pvfs) 를 통해서 하나의 파일로 합쳐지도록 하여 보안을 유지하도록 한다.
+  * 하지만 Application Code 에서는 OS의 FS를 사용하던지 PVFS를 사용하던지 관계없이 **URI(Universal Resource Identifier)** 를 통해서 Resource의 접근을 수행한다.
+```
+managed://mesh#test/test.x
+// managed : Protocol 이름, (http/ftp/zip/file/... 으로 확장될 수 있음)
+// mesh : Virtual Storage 이름
+// test/test.x : Virtual Storage 내의 Resoruce Path
+```
